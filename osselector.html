@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Download - Zudo Launcher</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<script src="https://unpkg.com/lucide@latest"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+
+*{margin:0;padding:0;box-sizing:border-box;}
+
+body{
+    font-family:'Inter',sans-serif;
+    background:#030303;
+    overflow-x:hidden;
+    color:white;
+}
+
+html{scroll-behavior:smooth;}
+
+::-webkit-scrollbar{width:8px;}
+::-webkit-scrollbar-thumb{background:#00e1ff;border-radius:10px;}
+
+.glass{
+    background:rgba(255,255,255,0.03);
+    backdrop-filter:blur(14px);
+    border:1px solid rgba(255,255,255,0.06);
+}
+
+.gradient{background:linear-gradient(135deg,#00e1ff,#0066ff);}
+.glow{box-shadow:0 0 40px rgba(0,225,255,.35);}
+.text-glow{text-shadow:0 0 25px rgba(0,225,255,.5);}
+
+.fade-up{
+    opacity:0;
+    transform:translateY(40px);
+    transition:all 1s cubic-bezier(.16,1,.3,1);
+}
+.fade-up.active{opacity:1;transform:translateY(0);}
+
+.card-hover{transition:all .4s ease;}
+.card-hover:hover{
+    transform:translateY(-8px);
+    border-color:rgba(0,225,255,.3);
+}
+
+@keyframes float{
+    0%{transform:translateY(0px);}
+    50%{transform:translateY(-12px);}
+    100%{transform:translateY(0px);}
+}
+.float{animation:float 4s ease-in-out infinite;}
+
+.site-bg{
+    position:fixed;
+    inset:0;
+    z-index:0;
+    background-image:url('bg.png');
+    background-size:cover;
+    background-position:center;
+    background-repeat:no-repeat;
+    opacity:0.95;
+}
+.site-bg::after{
+    content:'';
+    position:absolute;
+    inset:0;
+    background:
+        radial-gradient(ellipse at center, transparent 30%, rgba(0,0,0,0.85) 100%),
+        linear-gradient(to bottom, rgba(0,0,0,0.5) 0%, transparent 15%, transparent 85%, rgba(0,0,0,0.5) 100%),
+        linear-gradient(to right, rgba(0,0,0,0.5) 0%, transparent 15%, transparent 85%, rgba(0,0,0,0.5) 100%);
+}
+.bg-overlay{
+    position:fixed;
+    inset:0;
+    z-index:0;
+    background:rgba(3,3,3,0.55);
+}
+
+.page-transition{
+    animation:pageFadeIn 0.6s cubic-bezier(.16,1,.3,1) forwards;
+}
+@keyframes pageFadeIn{
+    from{opacity:0;transform:translateY(20px);}
+    to{opacity:1;transform:translateY(0);}
+}
+
+#thunderFlash{
+    position:fixed;
+    inset:0;
+    z-index:999;
+    pointer-events:none;
+    background:rgba(180,220,255,0.22);
+    opacity:0;
+}
+
+.os-selected{
+    border-color:rgba(0,225,255,.6) !important;
+    box-shadow:0 0 30px rgba(0,225,255,.15);
+}
+
+@keyframes progressBar{
+    from{width:0%;}
+    to{width:100%;}
+}
+.progress-anim{animation:progressBar 1.5s ease forwards;}
+
+/* ── Loading Screen ── */
+#loadingScreen{
+    position:fixed;
+    inset:0;
+    z-index:9999;
+    background:#030303;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    gap:32px;
+    transition:opacity 0.6s ease;
+}
+
+#loadingScreen.hide{
+    opacity:0;
+    pointer-events:none;
+}
+
+.loader-text{
+    font-size:13px;
+    font-weight:800;
+    letter-spacing:0.3em;
+    text-transform:uppercase;
+    color:rgba(255,255,255,0.4);
+}
+
+.loader-text span{color:#00e1ff;}
+
+.loader-ring svg{
+    width:140px;
+    height:140px;
+    transform:rotate(-90deg);
+}
+
+.loader-ring circle{
+    fill:none;
+    stroke-width:3;
+    stroke-linecap:round;
+}
+
+.loader-ring .track{
+    stroke:rgba(255,255,255,0.06);
+    stroke-dasharray:380;
+    stroke-dashoffset:0;
+}
+
+.loader-ring .fill{
+    stroke:url(#loaderGrad2);
+    stroke-dasharray:380;
+    stroke-dashoffset:380;
+    animation:loaderSpin 1.6s ease-in-out infinite;
+    filter:drop-shadow(0 0 6px #00e1ff);
+}
+
+@keyframes loaderSpin{
+    0%{stroke-dashoffset:380;}
+    50%{stroke-dashoffset:80;}
+    100%{stroke-dashoffset:380;}
+}
+
+</style>
+</head>
+<body>
+
+<!-- Loading Screen -->
+<div id="loadingScreen">
+    <div style="position:relative;display:flex;align-items:center;justify-content:center;width:140px;height:140px;">
+        <div class="loader-ring">
+            <svg viewBox="0 0 140 140">
+                <defs>
+                    <linearGradient id="loaderGrad2" x1="0%" y1="0%" x2="100%" y2="0%">
+                        <stop offset="0%" style="stop-color:#00e1ff"/>
+                        <stop offset="100%" style="stop-color:#0066ff"/>
+                    </linearGradient>
+                </defs>
+                <circle class="track" cx="70" cy="70" r="60"/>
+                <circle class="fill" cx="70" cy="70" r="60"/>
+            </svg>
+        </div>
+        <img src="logo.png" style="position:absolute;width:72px;height:72px;object-fit:contain;filter:drop-shadow(0 0 20px rgba(0,225,255,0.7));animation:float 3s ease-in-out infinite;"/>
+    </div>
+    <p class="loader-text">Loading <span>Zudo</span> Launcher...</p>
+</div>
+
+<div id="root"></div>
+<canvas id="thunderCanvas" style="position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:2;opacity:0.8;"></canvas>
+<div id="thunderFlash"></div>
+
+<script type="text/babel">
+
+const {useEffect,useRef,useState}=React;
+
+/* ─── Thunder ─── */
+const ThunderEffect=()=>{
+    useEffect(()=>{
+        const canvas=document.getElementById("thunderCanvas");
+        const ctx=canvas.getContext("2d");
+        const flash=document.getElementById("thunderFlash");
+        let W,H;
+        const resize=()=>{W=canvas.width=window.innerWidth;H=canvas.height=window.innerHeight;};
+        resize();
+        window.addEventListener("resize",resize);
+        const drawBolt=(x1,y1,x2,y2,branches,depth)=>{
+            if(depth===0)return;
+            const mx=(x1+x2)/2+(Math.random()-0.5)*(Math.abs(x2-x1)*0.9);
+            const my=(y1+y2)/2+(Math.random()-0.5)*(Math.abs(y2-y1)*0.4);
+            ctx.beginPath();
+            ctx.moveTo(x1,y1);
+            ctx.lineTo(mx,my);
+            ctx.lineTo(x2,y2);
+            ctx.strokeStyle=`rgba(180,230,255,${0.22*depth})`;
+            ctx.lineWidth=depth*1.0;
+            ctx.shadowBlur=20;
+            ctx.shadowColor="#00e1ff";
+            ctx.stroke();
+            if(branches>0&&Math.random()>0.4){
+                const bx=mx+(Math.random()-0.5)*160;
+                const by=my+Math.random()*110;
+                drawBolt(mx,my,bx,by,0,depth-1);
+            }
+            drawBolt(x1,y1,mx,my,branches-1,depth-1);
+            drawBolt(mx,my,x2,y2,branches-1,depth-1);
+        };
+        let timer;
+        const strike=()=>{
+            ctx.clearRect(0,0,W,H);
+            const x=Math.random()*W;
+            drawBolt(x,0,x+(Math.random()-0.5)*220,H*0.55+Math.random()*H*0.35,3,5);
+            flash.style.opacity="1";
+            flash.style.transition="opacity 0.04s";
+            setTimeout(()=>{flash.style.transition="opacity 0.3s";flash.style.opacity="0";},60);
+            setTimeout(()=>ctx.clearRect(0,0,W,H),230);
+            timer=setTimeout(strike,1500+Math.random()*2500);
+        };
+        timer=setTimeout(strike,800+Math.random()*1200);
+        return()=>{clearTimeout(timer);window.removeEventListener("resize",resize);};
+    },[]);
+    return null;
+};
+
+/* ─── Snow ─── */
+const SnowEffect=()=>{
+    const canvasRef=useRef(null);
+    useEffect(()=>{
+        const canvas=canvasRef.current;
+        const ctx=canvas.getContext("2d");
+        let particles=[],animationFrame;
+        const resize=()=>{canvas.width=window.innerWidth;canvas.height=window.innerHeight;};
+        class Snow{
+            constructor(){this.reset();}
+            reset(){
+                this.x=Math.random()*canvas.width;
+                this.y=Math.random()*-canvas.height;
+                this.size=Math.random()*4+1.5;
+                this.speed=Math.random()*1.5+0.6;
+                this.opacity=Math.random()*0.4+0.6;
+            }
+            update(){this.y+=this.speed;if(this.y>canvas.height)this.reset();}
+            draw(){
+                ctx.beginPath();
+                ctx.fillStyle=`rgba(255,255,255,${this.opacity})`;
+                ctx.arc(this.x,this.y,this.size,0,Math.PI*2);
+                ctx.fill();
+            }
+        }
+        const init=()=>{resize();particles=Array.from({length:220},()=>new Snow());};
+        const animate=()=>{
+            ctx.clearRect(0,0,canvas.width,canvas.height);
+            particles.forEach(p=>{p.update();p.draw();});
+            animationFrame=requestAnimationFrame(animate);
+        };
+        init();animate();
+        window.addEventListener("resize",resize);
+        return()=>{cancelAnimationFrame(animationFrame);window.removeEventListener("resize",resize);};
+    },[]);
+    return <canvas ref={canvasRef} className="fixed top-0 left-0 w-full h-full pointer-events-none z-0" style={{opacity:1}}/>;
+};
+
+/* ─── Reveal ─── */
+const useReveal=()=>{
+    const ref=useRef(null);
+    useEffect(()=>{
+        const observer=new IntersectionObserver(entries=>{
+            entries.forEach(entry=>{if(entry.isIntersecting)entry.target.classList.add("active");});
+        });
+        if(ref.current)observer.observe(ref.current);
+        return()=>{if(ref.current)observer.unobserve(ref.current);};
+    },[]);
+    return ref;
+};
+
+/* ─── Navigate ─── */
+const goTo=(url)=>{
+    document.body.style.transition="opacity 0.4s";
+    document.body.style.opacity="0";
+    setTimeout(()=>{window.location.href=url;},400);
+};
+
+/* ─── Navbar ─── */
+const Navbar=()=>(
+    <nav className="fixed top-0 w-full z-50 glass border-b border-white/5">
+        <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+            <div className="flex items-center gap-4 cursor-pointer" onClick={()=>goTo("index.html")}>
+                <img src="logo.png" className="w-12 h-12" style={{objectFit:'contain',filter:'drop-shadow(0 0 12px rgba(0,225,255,0.5))'}}/>
+                <h1 className="text-2xl font-black tracking-tight uppercase">
+                    Zudo <span className="text-cyan-400">Launcher</span>
+                </h1>
+            </div>
+            <div className="flex items-center gap-6">
+                <button onClick={()=>goTo("index.html")} className="font-bold uppercase hover:text-cyan-400 transition">Home</button>
+                <button className="gradient text-black px-6 py-3 rounded-full font-black hover:scale-105 transition">Download</button>
+            </div>
+        </div>
+    </nav>
+);
+
+/* ─── OS Selector ─── */
+const OSSelector=()=>{
+    const [selected,setSelected]=useState("windows");
+    const [downloading,setDownloading]=useState(false);
+    const ref=useReveal();
+
+    const platforms=[
+        {id:"windows",name:"Windows",icon:"monitor",available:true,version:"v1.0",size:"~45 MB"},
+        {id:"macos",name:"macOS",icon:"apple",available:false,version:"Coming Soon",size:"—"},
+        {id:"linux",name:"Linux",icon:"terminal",available:false,version:"Coming Soon",size:"—"}
+    ];
+
+    const handleDownload=(platform)=>{
+        if(!platform.available){alert(platform.name+" version is coming soon!");return;}
+        setDownloading(true);
+        setTimeout(()=>{
+            const link=document.createElement("a");
+            link.href="https://github.com/lakshitrajput018-oss/zudo-launcher/releases/download/v1.0/zudolaunchersetup.exe";
+            link.download="zudolaunchersetup.exe";
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            setDownloading(false);
+        },1600);
+    };
+
+    return(
+        <section className="pt-36 pb-24 px-6 min-h-screen">
+            <div className="max-w-6xl mx-auto">
+
+                {/* Header */}
+                <div ref={ref} className="fade-up active text-center mb-20">
+                    <img src="logo.png" className="w-24 h-24 mx-auto mb-8 float"
+                        style={{objectFit:'contain',filter:'drop-shadow(0 0 24px rgba(0,225,255,0.6))'}}/>
+                    <h1 className="text-6xl md:text-7xl font-black uppercase mb-6">
+                        Download <span className="text-cyan-400 text-glow">Zudo</span>
+                    </h1>
+                    <p className="text-gray-400 text-xl max-w-xl mx-auto">
+                        Choose your operating system and get started in seconds.
+                    </p>
+                </div>
+
+                {/* OS Cards */}
+                <div className="grid lg:grid-cols-3 gap-8 mb-16">
+                    {platforms.map((platform,i)=>{
+                        const cardRef=useReveal();
+                        return(
+                            <div
+                                key={platform.id}
+                                ref={cardRef}
+                                onClick={()=>setSelected(platform.id)}
+                                className={`fade-up glass p-10 rounded-[35px] border-2 cursor-pointer card-hover ${
+                                    selected===platform.id?"os-selected":"border-transparent"
+                                }`}
+                            >
+                                <div className={`w-16 h-16 rounded-2xl flex items-center justify-center mb-8 ${
+                                    platform.available?"gradient glow":"bg-white/10"
+                                }`}>
+                                    <i data-lucide={platform.icon} className={`w-8 h-8 ${platform.available?"text-black":"text-white/40"}`}></i>
+                                </div>
+                                <h2 className={`text-3xl font-black mb-3 ${!platform.available?"text-white/40":""}`}>
+                                    {platform.name}
+                                </h2>
+                                <div className="flex items-center gap-4 mb-8">
+                                    <span className={`text-sm font-bold px-3 py-1 rounded-full ${
+                                        platform.available
+                                        ?"bg-cyan-400/10 text-cyan-400 border border-cyan-400/20"
+                                        :"bg-white/5 text-white/30 border border-white/10"
+                                    }`}>{platform.version}</span>
+                                    <span className="text-gray-500 text-sm">{platform.size}</span>
+                                </div>
+                                <button
+                                    onClick={(e)=>{e.stopPropagation();handleDownload(platform);}}
+                                    disabled={downloading&&selected===platform.id}
+                                    className={`w-full py-5 rounded-2xl font-black transition text-lg ${
+                                        platform.available
+                                        ?"gradient text-black hover:scale-105 glow"
+                                        :"bg-white/5 text-white/30 cursor-not-allowed"
+                                    }`}
+                                >
+                                    {platform.available
+                                        ?(downloading&&selected===platform.id?"PREPARING...":"DOWNLOAD NOW")
+                                        :"COMING SOON"
+                                    }
+                                </button>
+                            </div>
+                        );
+                    })}
+                </div>
+
+                {/* Progress */}
+                {downloading&&(
+                    <div className="glass rounded-[24px] p-8 mb-16 text-center">
+                        <p className="text-cyan-400 font-black text-lg mb-4 uppercase tracking-widest">Preparing Download...</p>
+                        <div className="w-full bg-white/5 rounded-full h-2 overflow-hidden">
+                            <div className="h-full gradient rounded-full progress-anim glow"></div>
+                        </div>
+                    </div>
+                )}
+
+                {/* Guide */}
+                <div className="glass rounded-[35px] p-12">
+                    <h3 className="text-3xl font-black mb-8 text-center uppercase">
+                        Installation <span className="text-cyan-400">Guide</span>
+                    </h3>
+                    <div className="grid md:grid-cols-3 gap-8">
+                        {[
+                            {step:"01",title:"Download",desc:"Click Download Now to get the installer for your OS.",icon:"download"},
+                            {step:"02",title:"Install",desc:"Run the setup file and follow the on-screen steps.",icon:"package"},
+                            {step:"03",title:"Launch",desc:"Open Zudo Launcher, log in and enjoy Minecraft.",icon:"play"}
+                        ].map((item,i)=>{
+                            const stepRef=useReveal();
+                            return(
+                                <div key={i} ref={stepRef} className="fade-up text-center">
+                                    <div className="w-16 h-16 gradient rounded-2xl flex items-center justify-center mx-auto mb-6 glow">
+                                        <i data-lucide={item.icon} className="w-8 h-8 text-black"></i>
+                                    </div>
+                                    <div className="text-cyan-400 font-black text-sm mb-2 tracking-widest">STEP {item.step}</div>
+                                    <h4 className="text-2xl font-black mb-3">{item.title}</h4>
+                                    <p className="text-gray-400">{item.desc}</p>
+                                </div>
+                            );
+                        })}
+                    </div>
+                </div>
+
+                {/* Back */}
+                <div className="text-center mt-12">
+                    <button onClick={()=>goTo("index.html")} className="glass px-10 py-4 rounded-2xl font-black hover:border-cyan-400/40 transition text-gray-400 hover:text-white border border-white/10">
+                        ← Back to Home
+                    </button>
+                </div>
+
+            </div>
+        </section>
+    );
+};
+
+/* ─── Footer ─── */
+const Footer=()=>(
+    <footer className="border-t border-white/5 py-16">
+        <div className="max-w-7xl mx-auto px-6 text-center">
+            <img src="logo.png" className="w-14 h-14 mx-auto mb-6" style={{objectFit:'contain',filter:'drop-shadow(0 0 18px rgba(0,225,255,0.5))'}}/>
+            <h2 className="text-3xl font-black uppercase mb-4">Zudo Launcher</h2>
+            <p className="text-gray-500">© 2026 Zudo Launcher. All rights reserved.</p>
+        </div>
+    </footer>
+);
+
+/* ─── App ─── */
+const App=()=>{
+    useEffect(()=>{
+        const loader=document.getElementById("loadingScreen");
+        setTimeout(()=>{
+            loader.classList.add("hide");
+            setTimeout(()=>{loader.style.display="none";},650);
+        },1800);
+        if(window.lucide)window.lucide.createIcons();
+    },[]);
+
+    return(
+        <div className="relative min-h-screen bg-[#030303]">
+            <div className="site-bg"></div>
+            <div className="bg-overlay"></div>
+            <SnowEffect/>
+            <ThunderEffect/>
+            <Navbar/>
+            <div className="relative z-10 page-transition">
+                <OSSelector/>
+            </div>
+            <Footer/>
+        </div>
+    );
+};
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
+
+</script>
+</body>
+</html>
