@@ -1,461 +1,717 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Zudo Launcher</title>
-<script src="https://cdn.tailwindcss.com"></script>
-<script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-<script src="https://unpkg.com/lucide@latest"></script>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
-<style>
-
-*{margin:0;padding:0;box-sizing:border-box;}
-
-body{
-    font-family:'Inter',sans-serif;
-    background:#030303;
-    overflow-x:hidden;
-    color:white;
-}
-
-html{scroll-behavior:smooth;}
-
-::-webkit-scrollbar{width:8px;}
-::-webkit-scrollbar-thumb{background:#00e1ff;border-radius:10px;}
-
-.glass{
-    background:rgba(255,255,255,0.03);
-    backdrop-filter:blur(14px);
-    border:1px solid rgba(255,255,255,0.06);
-}
-
-.gradient{background:linear-gradient(135deg,#00e1ff,#0066ff);}
-.glow{box-shadow:0 0 40px rgba(0,225,255,.35);}
-.text-glow{text-shadow:0 0 25px rgba(0,225,255,.5);}
-
-.fade-up{
-    opacity:0;
-    transform:translateY(40px);
-    transition:all 1s cubic-bezier(.16,1,.3,1);
-}
-.fade-up.active{opacity:1;transform:translateY(0);}
-
-.card-hover{transition:all .4s ease;}
-.card-hover:hover{
-    transform:translateY(-8px);
-    border-color:rgba(0,225,255,.3);
-}
-
-@keyframes float{
-    0%{transform:translateY(0px);}
-    50%{transform:translateY(-12px);}
-    100%{transform:translateY(0px);}
-}
-.float{animation:float 4s ease-in-out infinite;}
-
-.hero-bg{
-    position:absolute;
-    inset:0;
-    background:
-        radial-gradient(circle at top left, rgba(0,225,255,.15), transparent 35%),
-        radial-gradient(circle at bottom right, rgba(0,80,255,.15), transparent 35%);
-}
-
-.site-bg{
-    position:fixed;
-    inset:0;
-    z-index:0;
-    background-image:url('bg.png');
-    background-size:cover;
-    background-position:center;
-    background-repeat:no-repeat;
-    opacity:0.95;
-}
-.site-bg::after{
-    content:'';
-    position:absolute;
-    inset:0;
-    background:
-        radial-gradient(ellipse at center, transparent 30%, rgba(0,0,0,0.85) 100%),
-        linear-gradient(to bottom, rgba(0,0,0,0.5) 0%, transparent 15%, transparent 85%, rgba(0,0,0,0.5) 100%),
-        linear-gradient(to right, rgba(0,0,0,0.5) 0%, transparent 15%, transparent 85%, rgba(0,0,0,0.5) 100%);
-}
-.bg-overlay{
-    position:fixed;
-    inset:0;
-    z-index:0;
-    background:rgba(3,3,3,0.55);
-}
-
-.page-transition{
-    animation:pageFadeIn 0.6s cubic-bezier(.16,1,.3,1) forwards;
-}
-@keyframes pageFadeIn{
-    from{opacity:0;transform:translateY(20px);}
-    to{opacity:1;transform:translateY(0);}
-}
-
-#thunderFlash{
-    position:fixed;
-    inset:0;
-    z-index:999;
-    pointer-events:none;
-    background:rgba(180,220,255,0.22);
-    opacity:0;
-}
-
-/* ── Loading Screen ── */
-#loadingScreen{
-    position:fixed;
-    inset:0;
-    z-index:9999;
-    background:#030303;
-    display:flex;
-    flex-direction:column;
-    align-items:center;
-    justify-content:center;
-    gap:32px;
-    transition:opacity 0.6s ease;
-}
-
-#loadingScreen.hide{
-    opacity:0;
-    pointer-events:none;
-}
-
-.loader-logo{
-    width:100px;
-    height:100px;
-    object-fit:contain;
-    filter:drop-shadow(0 0 24px rgba(0,225,255,0.7));
-    animation:float 3s ease-in-out infinite;
-}
-
-.loader-ring{
-    position:relative;
-    width:140px;
-    height:140px;
-}
-
-.loader-ring svg{
-    width:140px;
-    height:140px;
-    transform:rotate(-90deg);
-}
-
-.loader-ring circle{
-    fill:none;
-    stroke-width:3;
-    stroke-linecap:round;
-}
-
-.loader-ring .track{
-    stroke:rgba(255,255,255,0.08);
-    stroke-dasharray:377;
-    stroke-dashoffset:0;
-}
-
-.loader-ring .fill{
-    stroke:#00e1ff;
-    stroke-dasharray:377;
-    stroke-dashoffset:377;
-    animation:loaderSpin 1.4s ease-in-out infinite;
-    filter:drop-shadow(0 0 8px #00e1ff);
-}
-
-@keyframes loaderSpin{
-    0%{stroke-dashoffset:377;}
-    50%{stroke-dashoffset:80;}
-    100%{stroke-dashoffset:377;}
-}
-
-.loader-text{
-    font-size:13px;
-    font-weight:800;
-    letter-spacing:0.3em;
-    text-transform:uppercase;
-    color:rgba(255,255,255,0.4);
-    margin-top:8px;
-}
-
-.loader-text span{color:#00e1ff;}
-
-</style>
-</head>
-<body>
-
-<!-- Loading Screen -->
-<div id="loadingScreen">
-    <div style="position:relative;display:flex;align-items:center;justify-content:center;width:140px;height:140px;">
-        <div class="loader-ring">
-            <svg viewBox="0 0 140 140">
-                <circle class="track" cx="70" cy="70" r="60"/>
-                <circle class="fill" cx="70" cy="70" r="60"/>
-            </svg>
-        </div>
-        <img src="logo.png" style="position:absolute;width:72px;height:72px;object-fit:contain;filter:drop-shadow(0 0 20px rgba(0,225,255,0.7));animation:float 3s ease-in-out infinite;"/>
-    </div>
-    <p class="loader-text">Loading <span>Zudo</span> Launcher...</p>
-</div>
-
-<div id="root"></div>
-<canvas id="thunderCanvas" style="position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:2;opacity:0.8;"></canvas>
-<div id="thunderFlash"></div>
-
-<script type="text/babel">
-
-const {useEffect,useRef,useState}=React;
-
-/* ─── Thunder ─── */
-const ThunderEffect=()=>{
-    useEffect(()=>{
-        const canvas=document.getElementById("thunderCanvas");
-        const ctx=canvas.getContext("2d");
-        const flash=document.getElementById("thunderFlash");
-        let W,H;
-
-        const resize=()=>{W=canvas.width=window.innerWidth;H=canvas.height=window.innerHeight;};
-        resize();
-        window.addEventListener("resize",resize);
-
-        const drawBolt=(x1,y1,x2,y2,branches,depth)=>{
-            if(depth===0)return;
-            const mx=(x1+x2)/2+(Math.random()-0.5)*(Math.abs(x2-x1)*0.9);
-            const my=(y1+y2)/2+(Math.random()-0.5)*(Math.abs(y2-y1)*0.4);
-            ctx.beginPath();
-            ctx.moveTo(x1,y1);
-            ctx.lineTo(mx,my);
-            ctx.lineTo(x2,y2);
-            ctx.strokeStyle=`rgba(180,230,255,${0.22*depth})`;
-            ctx.lineWidth=depth*1.0;
-            ctx.shadowBlur=20;
-            ctx.shadowColor="#00e1ff";
-            ctx.stroke();
-            if(branches>0&&Math.random()>0.4){
-                const bx=mx+(Math.random()-0.5)*160;
-                const by=my+Math.random()*110;
-                drawBolt(mx,my,bx,by,0,depth-1);
-            }
-            drawBolt(x1,y1,mx,my,branches-1,depth-1);
-            drawBolt(mx,my,x2,y2,branches-1,depth-1);
-        };
-
-        let timer;
-        /* faster: 1.5s–4s gap */
-        const strike=()=>{
-            ctx.clearRect(0,0,W,H);
-            const x=Math.random()*W;
-            drawBolt(x,0,x+(Math.random()-0.5)*220,H*0.55+Math.random()*H*0.35,3,5);
-            flash.style.opacity="1";
-            flash.style.transition="opacity 0.04s";
-            setTimeout(()=>{flash.style.transition="opacity 0.3s";flash.style.opacity="0";},60);
-            setTimeout(()=>ctx.clearRect(0,0,W,H),230);
-            timer=setTimeout(strike,800+Math.random()*1500);
-        };
-
-        timer=setTimeout(strike,500+Math.random()*800);
-        return()=>{clearTimeout(timer);window.removeEventListener("resize",resize);};
-    },[]);
-    return null;
-};
-
-/* ─── Snow ─── */
-const SnowEffect=()=>{
-    const canvasRef=useRef(null);
-    useEffect(()=>{
-        const canvas=canvasRef.current;
-        const ctx=canvas.getContext("2d");
-        let particles=[],animationFrame;
-        const resize=()=>{canvas.width=window.innerWidth;canvas.height=window.innerHeight;};
-        class Snow{
-            constructor(){this.reset();}
-            reset(){
-                this.x=Math.random()*canvas.width;
-                this.y=Math.random()*-canvas.height;
-                this.size=Math.random()*4+1.5;
-                this.speed=Math.random()*1.5+0.6;
-                this.opacity=Math.random()*0.4+0.6; /* brighter: 0.6–1.0 */
-            }
-            update(){this.y+=this.speed;if(this.y>canvas.height)this.reset();}
-            draw(){
-                ctx.beginPath();
-                ctx.fillStyle=`rgba(255,255,255,${this.opacity})`;
-                ctx.arc(this.x,this.y,this.size,0,Math.PI*2);
-                ctx.fill();
-            }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Soul Launcher - The Launcher for Every Player</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts for retro/pixel and modern design -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Silkscreen:wght@400;700&family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Custom animations and styles -->
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0b0713;
+            overflow-x: hidden;
         }
-        const init=()=>{resize();particles=Array.from({length:220},()=>new Snow());};
-        const animate=()=>{
-            ctx.clearRect(0,0,canvas.width,canvas.height);
-            particles.forEach(p=>{p.update();p.draw();});
-            animationFrame=requestAnimationFrame(animate);
-        };
-        init();animate();
-        window.addEventListener("resize",resize);
-        return()=>{cancelAnimationFrame(animationFrame);window.removeEventListener("resize",resize);};
-    },[]);
-    /* full opacity on canvas itself */
-    return <canvas ref={canvasRef} className="fixed top-0 left-0 w-full h-full pointer-events-none z-0" style={{opacity:1}}/>;
-};
+        .pixel-font {
+            font-family: 'Silkscreen', monospace;
+        }
+        .retro-font {
+            font-family: 'Press Start 2P', monospace;
+        }
+        /* Custom Glowing Effects */
+        .glow-orange {
+            text-shadow: 0 0 10px rgba(249, 115, 22, 0.6), 0 0 20px rgba(249, 115, 22, 0.4);
+        }
+        .glow-purple {
+            text-shadow: 0 0 10px rgba(168, 85, 247, 0.6), 0 0 20px rgba(168, 85, 247, 0.4);
+        }
+        .glow-green {
+            box-shadow: 0 0 15px rgba(34, 197, 94, 0.5);
+        }
+        /* Pixel borders inspired by Minecraft UI */
+        .pixel-border {
+            border: 4px solid #1e1b29;
+            box-shadow: inset -4px -4px 0px #0c0a12, inset 4px 4px 0px #3c3554;
+        }
+        .pixel-button {
+            position: relative;
+            transition: all 0.1s ease;
+            image-rendering: pixelated;
+        }
+        .pixel-button:active {
+            transform: translateY(2px);
+        }
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0f0a1c;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #3b2c5c;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #5c438f;
+        }
+    </style>
+</head>
+<body class="text-white selection:bg-purple-600 selection:text-white min-h-screen flex flex-col justify-between relative">
 
-/* ─── Reveal ─── */
-const useReveal=()=>{
-    const ref=useRef(null);
-    useEffect(()=>{
-        const observer=new IntersectionObserver(entries=>{
-            entries.forEach(entry=>{if(entry.isIntersecting)entry.target.classList.add("active");});
-        });
-        if(ref.current)observer.observe(ref.current);
-        return()=>{if(ref.current)observer.unobserve(ref.current);};
-    },[]);
-    return ref;
-};
+    <!-- Interactive Background Canvas -->
+    <canvas id="pixelCanvas" class="absolute top-0 left-0 w-full h-full -z-10 pointer-events-none"></canvas>
 
-/* ─── Navigate with fade ─── */
-const goTo=(url)=>{
-    document.body.style.transition="opacity 0.4s";
-    document.body.style.opacity="0";
-    setTimeout(()=>{window.location.href=url;},400);
-};
-
-/* ─── Navbar ─── */
-const Navbar=()=>(
-    <nav className="fixed top-0 w-full z-50 glass border-b border-white/5">
-        <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
-            <div className="flex items-center gap-4 cursor-pointer" onClick={()=>window.scrollTo({top:0,behavior:'smooth'})}>
-                <img src="logo.png" className="w-12 h-12 glow" style={{borderRadius:0,objectFit:'contain'}}/>
-                <h1 className="text-2xl font-black tracking-tight uppercase">
-                    Zudo <span className="text-cyan-400">Launcher</span>
-                </h1>
+    <!-- Header & Navigation Options -->
+    <header class="w-full z-10 px-6 py-4 flex justify-between items-center max-w-7xl mx-auto">
+        <div class="flex items-center space-x-3 cursor-pointer group" onclick="playSelectSound()">
+            <div class="w-10 h-10 bg-gradient-to-tr from-purple-600 to-pink-500 rounded-lg flex items-center justify-center shadow-lg group-hover:rotate-12 transition-transform">
+                <i class="fa-solid fa-ghost text-xl text-white"></i>
             </div>
-            <div className="flex items-center gap-6">
-                <button onClick={()=>window.scrollTo({top:0,behavior:'smooth'})} className="font-bold uppercase hover:text-cyan-400 transition">Home</button>
-                <button onClick={()=>goTo("osselector.html")} className="gradient text-black px-6 py-3 rounded-full font-black hover:scale-105 transition">Download</button>
+            <span class="pixel-font text-lg md:text-xl font-bold tracking-wider text-purple-400 group-hover:text-purple-300 transition-colors">SOUL LAUNCHER</span>
+        </div>
+        <div class="flex items-center space-x-4">
+            <!-- Theme Changer Widget -->
+            <button onclick="toggleTheme(); playClickSound();" class="bg-black/40 hover:bg-black/60 border border-white/10 px-3 py-1.5 rounded-full text-xs flex items-center gap-2 transition-all">
+                <span id="themeDot" class="w-2.5 h-2.5 rounded-full bg-orange-500 animate-pulse"></span>
+                <span id="themeName" class="text-gray-300 font-medium">Sunset Theme</span>
+            </button>
+            <button onclick="toggleSound(); playClickSound();" id="soundBtn" class="bg-black/40 hover:bg-black/60 border border-white/10 p-2 rounded-full text-gray-300 transition-all" title="Toggle Sound">
+                <i class="fa-solid fa-volume-xmark"></i>
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Content Area -->
+    <main class="flex-grow flex flex-col justify-center items-center px-4 py-8 z-10">
+        <div class="max-w-4xl w-full text-center flex flex-col items-center">
+            
+            <!-- Beautiful Animated Block Logo resembling image_0d97e4.jpg layout -->
+            <div class="relative mb-6 select-none animate-bounce" style="animation-duration: 4s;">
+                <!-- Decorative floating bees / souls -->
+                <div class="absolute -top-6 -left-10 text-xl animate-pulse text-yellow-400"><i class="fa-solid fa-cubes-stacked"></i></div>
+                <div class="absolute -bottom-4 -right-8 text-xl animate-pulse text-purple-400" style="animation-delay: 1.5s;"><i class="fa-solid fa-ghost"></i></div>
+                
+                <!-- SVG Soul Crown Indicator -->
+                <div class="flex justify-center mb-1">
+                    <svg class="w-16 h-8 text-orange-500 transition-colors duration-500" id="logoCrown" viewBox="0 0 100 50" fill="currentColor">
+                        <path d="M10 50 L30 20 L50 40 L70 20 L90 50 Z" />
+                        <circle cx="50" cy="15" r="5" class="animate-ping" />
+                        <circle cx="30" cy="10" r="3" />
+                        <circle cx="70" cy="10" r="3" />
+                    </svg>
+                </div>
+                
+                <!-- Massive Pixel Font Header with shadow rendering -->
+            <h1 id="logoText" class="pixel-font text-5xl md:text-8xl font-black tracking-widest text-transparent bg-clip-text bg-gradient-to-b from-yellow-300 via-orange-400 to-red-600 drop-shadow-[0_5px_0_rgba(15,5,0,1)] transition-all duration-500 hover:scale-105 transform cursor-pointer">
+                SOUL
+            </h1>
+            
+            <!-- Launcher subtitle badge -->
+            <div class="mt-2 inline-block bg-black/50 border border-white/10 px-4 py-1 rounded-md">
+                <span class="pixel-font text-xs tracking-wider text-orange-400" id="subTitleText">LAUNCHER</span>
             </div>
         </div>
-    </nav>
-);
 
-/* ─── Hero ─── */
-const Hero=()=>{
-    const ref=useReveal();
-    return(
-        <section className="relative min-h-screen flex items-center justify-center px-6 overflow-hidden">
-            <div className="hero-bg"></div>
-            <div ref={ref} className="fade-up active text-center relative z-10 max-w-5xl">
-                <img src="logo.png" className="w-52 h-52 md:w-64 md:h-64 mx-auto mb-10 float"
-                    style={{objectFit:'contain',filter:'drop-shadow(0 0 30px rgba(0,225,255,0.5))'}}/>
-                <h1 className="text-6xl md:text-8xl font-black leading-none tracking-tighter mb-8">
-                    THE NEW <br/>
-                    <span className="text-cyan-400 text-glow italic">STANDARD.</span>
-                </h1>
-                <p className="text-xl text-gray-400 max-w-2xl mx-auto mb-12">
-                    Fast. Lightweight. Beautiful. Designed for the ultimate Minecraft experience.
-                </p>
-                <button onClick={()=>goTo("osselector.html")} className="gradient px-14 py-5 rounded-2xl text-black text-xl font-black hover:scale-105 transition glow">
-                    DOWNLOAD NOW
-                </button>
-            </div>
-        </section>
-    );
-};
+        <!-- Launcher Slogan -->
+        <p class="text-gray-300 text-lg md:text-2xl font-semibold mb-8 max-w-xl">
+            The Client and Launcher for every Player
+        </p>
 
-/* ─── Features ─── */
-const Features=()=>{
-    const features=[
-        {title:"Pure Speed",desc:"Optimized startup and performance.",icon:"zap"},
-        {title:"Zero Lag",desc:"Low resource usage for better FPS.",icon:"activity"},
-        {title:"Secure",desc:"Safe and stable launcher environment.",icon:"shield-check"},
-        {title:"Modern UI",desc:"Clean interface with smooth animations.",icon:"layout-dashboard"}
-    ];
-    return(
-        <section className="py-32 px-6">
-            <div className="max-w-7xl mx-auto">
-                <h2 className="text-5xl md:text-6xl font-black uppercase text-center mb-20">
-                    Built To <span className="text-cyan-400">Perform</span>
-                </h2>
-                <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
-                    {features.map((f,i)=>{
-                        const ref=useReveal();
-                        return(
-                            <div key={i} ref={ref} className="fade-up glass p-10 rounded-[35px] card-hover">
-                                <div className="w-16 h-16 gradient rounded-2xl flex items-center justify-center mb-8 glow">
-                                    <i data-lucide={f.icon} className="w-8 h-8 text-black"></i>
-                                </div>
-                                <h3 className="text-3xl font-black mb-5">{f.title}</h3>
-                                <p className="text-gray-400">{f.desc}</p>
-                            </div>
-                        );
-                    })}
+        <!-- Countdown Container Cards -->
+            <div class="w-full max-w-lg bg-black/45 backdrop-blur-md rounded-2xl border border-white/10 p-6 md:p-8 shadow-2xl mb-8 relative overflow-hidden">
+                <!-- Background ambient glow -->
+                <div id="glowBg" class="absolute inset-0 bg-gradient-to-tr from-orange-600/10 to-red-600/5 pointer-events-none transition-all duration-500"></div>
+                
+                <h3 class="pixel-font text-sm md:text-md tracking-widest text-gray-400 mb-6 uppercase">
+                    New Launcher Launching In
+                </h3>
+
+                <!-- Grid countdown indicators -->
+                <div class="grid grid-cols-4 gap-3 md:gap-4 max-w-md mx-auto relative z-10">
+                    <!-- Days -->
+                    <div class="flex flex-col items-center">
+                        <div class="w-full bg-[#271420]/80 border-b-4 border-red-900/40 rounded-xl py-4 px-2 relative">
+                            <span id="days" class="pixel-font text-3xl md:text-5xl font-bold text-orange-400 tracking-tight glow-orange transition-all duration-300">24</span>
+                        </div>
+                        <span class="text-[10px] md:text-xs font-bold tracking-widest text-gray-400 uppercase mt-2">Days</span>
+                    </div>
+                    <!-- Hours -->
+                    <div class="flex flex-col items-center">
+                        <div class="w-full bg-[#271420]/80 border-b-4 border-red-900/40 rounded-xl py-4 px-2">
+                            <span id="hours" class="pixel-font text-3xl md:text-5xl font-bold text-orange-400 tracking-tight glow-orange transition-all duration-300 font-mono">00</span>
+                        </div>
+                        <span class="text-[10px] md:text-xs font-bold tracking-widest text-gray-400 uppercase mt-2">Hours</span>
+                    </div>
+                    <!-- Minutes -->
+                    <div class="flex flex-col items-center">
+                        <div class="w-full bg-[#271420]/80 border-b-4 border-red-900/40 rounded-xl py-4 px-2">
+                            <span id="minutes" class="pixel-font text-3xl md:text-5xl font-bold text-orange-400 tracking-tight glow-orange transition-all duration-300 font-mono">00</span>
+                        </div>
+                        <span class="text-[10px] md:text-xs font-bold tracking-widest text-gray-400 uppercase mt-2">Min</span>
+                    </div>
+                    <!-- Seconds -->
+                    <div class="flex flex-col items-center">
+                        <div class="w-full bg-[#271420]/80 border-b-4 border-red-900/40 rounded-xl py-4 px-2">
+                            <span id="seconds" class="pixel-font text-3xl md:text-5xl font-bold text-orange-400 tracking-tight glow-orange transition-all duration-300 font-mono">00</span>
+                        </div>
+                        <span class="text-[10px] md:text-xs font-bold tracking-widest text-gray-400 uppercase mt-2">Sec</span>
+                    </div>
                 </div>
             </div>
-        </section>
-    );
-};
 
-/* ─── About ─── */
-const About=()=>{
-    const ref=useReveal();
-    return(
-        <section className="py-32 px-6">
-            <div ref={ref} className="fade-up max-w-5xl mx-auto text-center">
-                <h2 className="text-5xl md:text-6xl font-black uppercase mb-12">
-                    About <span className="text-cyan-400">Zudo</span>
-                </h2>
-                <p className="text-xl text-gray-400 leading-relaxed">
-                    Zudo Launcher is designed to provide a fast, stable, and smooth Minecraft experience for every player.
-                    We focus on performance, simplicity, modern design, and regular improvements for the community.
+            <!-- Pre-Register CTA for Unreleased Launcher release -->
+            <div class="mb-8 w-full max-w-md px-4 relative z-20">
+                <form onsubmit="triggerPreRegister(event); playSuccessSound();" class="pixel-border bg-[#181124]/95 p-3 rounded-xl flex flex-col sm:flex-row gap-3 items-center shadow-2xl">
+                    <div class="relative w-full">
+                        <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center text-purple-400">
+                            <i class="fa-solid fa-envelope text-sm"></i>
+                        </span>
+                        <input type="email" required placeholder="Enter email for Beta invite..." class="w-full bg-[#0c0813] text-white border border-purple-500/30 rounded-lg py-3.5 pl-10 pr-4 text-xs focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-400 placeholder-gray-500 tracking-wider transition-all">
+                    </div>
+                    <button type="submit" class="pixel-border bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-500 hover:to-red-500 active:translate-y-1 py-3.5 px-6 rounded-lg font-bold text-xs tracking-widest whitespace-nowrap text-white cursor-pointer w-full sm:w-auto transition-all pixel-font shadow-lg">
+                        NOTIFY ME
+                    </button>
+                </form>
+                <p class="text-[10px] text-gray-500 mt-2 text-center">
+                    <i class="fa-solid fa-circle-info text-purple-500/80 mr-1"></i> Pre-register to secure your exclusive early access beta slot!
                 </p>
             </div>
-        </section>
-    );
-};
 
-/* ─── Footer ─── */
-const Footer=()=>(
-    <footer className="border-t border-white/5 py-16">
-        <div className="max-w-7xl mx-auto px-6 text-center">
-            <img src="logo.png" className="w-14 h-14 mx-auto mb-6" style={{objectFit:'contain',filter:'drop-shadow(0 0 18px rgba(0,225,255,0.5))'}}/>
-            <h2 className="text-3xl font-black uppercase mb-4">Zudo Launcher</h2>
-            <p className="text-gray-500">© 2026 Zudo Launcher. All rights reserved.</p>
+            <!-- Detailed elegant description with updated cleaner styling -->
+            <div class="max-w-2xl text-center px-4">
+                <p class="text-sm md:text-base text-gray-400/90 leading-relaxed">
+                    Soul Launcher is a Minecraft client and launcher built for Java and Bedrock Edition. Whether you want beautiful custom optimizations, desire to customize your game with ease, or just want a smoother high-performance gaming experience, Soul Launcher has you covered.
+                </p>
+            </div>
+
+            <!-- Extra Interactive Feature Drawer Button -->
+            <div class="mt-12">
+                <button onclick="toggleDetailsDrawer(); playClickSound();" class="text-purple-400 hover:text-purple-300 font-semibold text-sm flex items-center gap-2 transition-colors mx-auto bg-purple-950/30 px-4 py-2 rounded-full border border-purple-800/20">
+                    <i class="fa-solid fa-circle-info"></i>
+                    <span>Explore SOul Features & Specs</span>
+                    <i id="drawerChevron" class="fa-solid fa-chevron-down transition-transform"></i>
+                </button>
+            </div>
+
+            <!-- Interactive Drawer (Initially Closed) -->
+            <div id="detailsDrawer" class="max-h-0 overflow-hidden transition-all duration-500 ease-in-out w-full max-w-4xl mt-6">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 p-6 bg-black/55 backdrop-blur-md rounded-2xl border border-white/5 text-left">
+                    <!-- Feature 1 -->
+                    <div class="p-4 rounded-xl bg-white/5 border border-white/5 hover:bg-white/10 transition-colors">
+                        <div class="w-10 h-10 rounded-lg bg-orange-500/10 flex items-center justify-center text-orange-400 mb-3">
+                            <i class="fa-solid fa-gauge-high text-xl"></i>
+                        </div>
+                        <h4 class="font-bold text-white mb-2">High FPS Optimization</h4>
+                        <p class="text-xs text-gray-400">Integrated sodium-based rendering optimizations providing up to 250% average frames-per-second boost over stock launchers.</p>
+                    </div>
+                    <!-- Feature 2 -->
+                    <div class="p-4 rounded-xl bg-white/5 border border-white/5 hover:bg-white/10 transition-colors">
+                        <div class="w-10 h-10 rounded-lg bg-purple-500/10 flex items-center justify-center text-purple-400 mb-3">
+                            <i class="fa-solid fa-puzzle-piece text-xl"></i>
+                        </div>
+                        <h4 class="font-bold text-white mb-2">Built-in Mod Hub</h4>
+                        <p class="text-xs text-gray-400">Instantly install, update, and manage your favorite fabric and forge mods directly inside the SOul dashboard with one click.</p>
+                    </div>
+                    <!-- Feature 3 -->
+                    <div class="p-4 rounded-xl bg-white/5 border border-white/5 hover:bg-white/10 transition-colors">
+                        <div class="w-10 h-10 rounded-lg bg-emerald-500/10 flex items-center justify-center text-emerald-400 mb-3">
+                            <i class="fa-solid fa-wand-magic-sparkles text-xl"></i>
+                        </div>
+                        <h4 class="font-bold text-white mb-2">Modern Cosmetics</h4>
+                        <p class="text-xs text-gray-400">Equip custom 3D capes, elegant wings, and glowing server-wide cosmetic items for both Java and Bedrock cross-play environments.</p>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <!-- Footer credits - clean replacement of MC PVP / InPvP with stylish custom indicators -->
+    <footer class="w-full z-10 px-6 py-8 border-t border-white/5 bg-[#080510]/80 backdrop-blur-sm mt-12">
+        <div class="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-6">
+            <!-- Left: Brand signature -->
+            <div class="text-center md:text-left">
+                <p class="text-xs text-gray-500">&copy; 2026 Soul Launcher Group. All rights reserved.</p>
+                <p class="text-[10px] text-gray-600 mt-1">Not affiliated with Mojang Studios or Microsoft Corporation.</p>
+            </div>
+
+            <!-- Center: Custom partners without PVP links -->
+            <div class="flex flex-wrap justify-center items-center gap-6">
+                <div class="flex flex-col items-center">
+                    <span class="text-[9px] uppercase tracking-widest text-gray-500 font-semibold mb-1">Brought To You By</span>
+                    <div class="flex items-center gap-1 text-gray-300 hover:text-purple-400 transition-colors cursor-pointer" onclick="playSelectSound()">
+                        <i class="fa-solid fa-ghost text-xs"></i>
+                        <span class="pixel-font text-xs font-bold">SOul Labs</span>
+                    </div>
+                </div>
+                <div class="h-6 w-[1px] bg-white/10 hidden md:block"></div>
+                <div class="flex flex-col items-center">
+                    <span class="text-[9px] uppercase tracking-widest text-gray-500 font-semibold mb-1">Collaborating With</span>
+                    <div class="flex items-center gap-2 text-gray-300 hover:text-orange-400 transition-colors cursor-pointer" onclick="playSelectSound()">
+                        <i class="fa-solid fa-microchip text-xs"></i>
+                        <span class="pixel-font text-xs font-bold">Fabric Engine</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right: Tech support quick contacts -->
+            <div class="flex gap-4 text-xs text-gray-400">
+                <a href="#privacy" class="hover:underline hover:text-purple-400">Privacy Policy</a>
+                <span>&bull;</span>
+                <a href="#terms" class="hover:underline hover:text-purple-400">Terms of Service</a>
+            </div>
         </div>
     </footer>
-);
 
-/* ─── App ─── */
-const App=()=>{
-    useEffect(()=>{
-        /* hide loader after page ready */
-        const loader=document.getElementById("loadingScreen");
-        setTimeout(()=>{
-            loader.classList.add("hide");
-            setTimeout(()=>{loader.style.display="none";},650);
-        },1800);
-        if(window.lucide)window.lucide.createIcons();
-    },[]);
+    <!-- Notification system box instead of native alert -->
+    <div id="notifBox" class="fixed bottom-6 right-6 z-50 transform translate-y-20 opacity-0 transition-all duration-300 bg-emerald-950/90 border border-emerald-500/30 text-emerald-200 px-5 py-3 rounded-xl shadow-2xl flex items-center gap-3">
+        <i class="fa-solid fa-circle-check text-emerald-400 text-lg"></i>
+        <span id="notifText" class="text-sm font-medium">Notification message</span>
+    </div>
 
-    return(
-        <div className="relative min-h-screen bg-[#030303]">
-            <div className="site-bg"></div>
-            <div className="bg-overlay"></div>
-            <SnowEffect/>
-            <ThunderEffect/>
-            <Navbar/>
-            <div className="relative z-10 page-transition">
-                <Hero/>
-                <Features/>
-                <About/>
-            </div>
-            <Footer/>
-        </div>
-    );
-};
+    <!-- Sound and Animation Script Setup -->
+    <script>
+        // Web Audio Context Synthesizer for retro games/sounds effect
+        let audioCtx = null;
+        let isMuted = true;
 
-ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
+        function initAudio() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+        }
 
-</script>
+        function toggleSound() {
+            initAudio();
+            isMuted = !isMuted;
+            const soundBtn = document.getElementById('soundBtn');
+            if (isMuted) {
+                soundBtn.innerHTML = '<i class="fa-solid fa-volume-xmark"></i>';
+                showNotification("Sounds muted");
+            } else {
+                soundBtn.innerHTML = '<i class="fa-solid fa-volume-high"></i>';
+                showNotification("Sounds enabled!");
+                playSuccessSound();
+            }
+        }
+
+        // Play synthetic click sound
+        function playClickSound() {
+            if (isMuted) return;
+            initAudio();
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(300, audioCtx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(120, audioCtx.currentTime + 0.1);
+            gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
+            
+            osc.start();
+            osc.stop(audioCtx.currentTime + 0.1);
+        }
+
+        // Play synthetic hover/select sound
+        function playSelectSound() {
+            if (isMuted) return;
+            initAudio();
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(600, audioCtx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(900, audioCtx.currentTime + 0.1);
+            gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
+            
+            osc.start();
+            osc.stop(audioCtx.currentTime + 0.12);
+        }
+
+        // Play synthetic success fanfare sound
+        function playSuccessSound() {
+            if (isMuted) return;
+            initAudio();
+            const now = audioCtx.currentTime;
+            
+            function note(freq, start, duration) {
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.type = 'square';
+                osc.frequency.setValueAtTime(freq, start);
+                gain.gain.setValueAtTime(0.1, start);
+                gain.gain.exponentialRampToValueAtTime(0.005, start + duration);
+                osc.start(start);
+                osc.stop(start + duration);
+            }
+            
+            note(523.25, now, 0.1); // C5
+            note(659.25, now + 0.1, 0.1); // E5
+            note(783.99, now + 0.2, 0.1); // G5
+            note(1046.50, now + 0.3, 0.3); // C6
+        }
+
+        // Custom Notification function to replace alerts
+        function showNotification(text) {
+            const box = document.getElementById('notifBox');
+            const txt = document.getElementById('notifText');
+            txt.innerText = text;
+            box.classList.remove('translate-y-20', 'opacity-0');
+            box.classList.add('translate-y-0', 'opacity-100');
+            setTimeout(() => {
+                box.classList.remove('translate-y-0', 'opacity-100');
+                box.classList.add('translate-y-20', 'opacity-0');
+            }, 3000);
+        }
+
+        // Trigger Pre-Registration Action
+        function triggerPreRegister(e) {
+            e.preventDefault();
+            const emailInput = e.target.querySelector('input[type="email"]');
+            if (emailInput) {
+                const email = emailInput.value;
+                showNotification(`Successfully registered ${email} for Beta access!`);
+                emailInput.value = '';
+            }
+        }
+
+        // Dynamic Live Countdown System - set to exactly 24 days from first visit, cached locally
+        let countdownTarget;
+        const cachedTarget = localStorage.getItem('soul_launcher_countdown_target');
+
+        if (cachedTarget) {
+            countdownTarget = new Date(parseInt(cachedTarget));
+        } else {
+            // No cached target, create target exactly 24 days from now
+            countdownTarget = new Date();
+            countdownTarget.setDate(countdownTarget.getDate() + 24);
+            localStorage.setItem('soul_launcher_countdown_target', countdownTarget.getTime().toString());
+        }
+
+        function updateCountdown() {
+            const now = new Date().getTime();
+            const difference = countdownTarget - now;
+
+            if (difference < 0) {
+                // If it ever expires, simply reset to next 24 days or display zero
+                document.getElementById('days').innerText = "00";
+                document.getElementById('hours').innerText = "00";
+                document.getElementById('minutes').innerText = "00";
+                document.getElementById('seconds').innerText = "00";
+                return;
+            }
+
+            const days = Math.floor(difference / (1000 * 60 * 60 * 24));
+            const hours = Math.floor((difference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            const minutes = Math.floor((difference % (1000 * 60 * 60)) / (1000 * 60));
+            const seconds = Math.floor((difference % (1000 * 60)) / 1000);
+
+            // Format double digits
+            document.getElementById('days').innerText = days.toString().padStart(2, '0');
+            document.getElementById('hours').innerText = hours.toString().padStart(2, '0');
+            document.getElementById('minutes').innerText = minutes.toString().padStart(2, '0');
+            document.getElementById('seconds').innerText = seconds.toString().padStart(2, '0');
+        }
+
+        // Initial launch & interval ticks
+        updateCountdown();
+        setInterval(updateCountdown, 1000);
+
+
+        // Canvas Pixel-Art Background Generator & Particle Simulation
+        const canvas = document.getElementById('pixelCanvas');
+        const ctx = canvas.getContext('2d');
+        let width = canvas.width = window.innerWidth;
+        let height = canvas.height = window.innerHeight;
+
+        // Visual theme parameters (default sunset crimson)
+        let activeTheme = 'sunset'; // 'sunset' or 'soulfire'
+        
+        let colorPalette = {
+            sunset: {
+                skyTop: '#10081d',
+                skyMiddle: '#411933',
+                skyBottom: '#953443',
+                sea: '#ca485c',
+                seaReflection: '#fa6c7f',
+                forestSilhouettes: '#1a0b1f',
+                particle: '#faad4e',
+                crownColor: '#f97316',
+                gradientFrom: '#fde047',
+                gradientTo: '#ef4444'
+            },
+            soulfire: {
+                skyTop: '#080c1e',
+                skyMiddle: '#111d42',
+                skyBottom: '#18476d',
+                sea: '#1c7ba1',
+                seaReflection: '#57c7e3',
+                forestSilhouettes: '#090e1c',
+                particle: '#6fe8e8',
+                crownColor: '#3b82f6',
+                gradientFrom: '#6ee7b7',
+                gradientTo: '#2563eb'
+            }
+        };
+
+        // Resize handler
+        window.addEventListener('resize', () => {
+            width = canvas.width = window.innerWidth;
+            height = canvas.height = window.innerHeight;
+            generateLandscape();
+        });
+
+        // Background Particles
+        class Spark {
+            constructor() {
+                this.reset();
+            }
+            reset() {
+                this.x = Math.random() * width;
+                this.y = height * 0.4 + Math.random() * height * 0.6; // lower half
+                this.size = Math.floor(Math.random() * 4) + 2; // pixel block size
+                this.speedY = -(Math.random() * 0.8 + 0.2);
+                this.speedX = (Math.random() - 0.5) * 0.5;
+                this.opacity = Math.random() * 0.6 + 0.4;
+                this.life = Math.random() * 100 + 50;
+            }
+            update() {
+                this.y += this.speedY;
+                this.x += this.speedX;
+                this.life--;
+                if (this.life <= 0 || this.y < height * 0.2) {
+                    this.reset();
+                }
+            }
+            draw() {
+                const palette = colorPalette[activeTheme];
+                ctx.fillStyle = palette.particle;
+                ctx.globalAlpha = this.opacity * (this.life / 150);
+                // Draw clean retro pixel block
+                ctx.fillRect(Math.floor(this.x), Math.floor(this.y), this.size, this.size);
+            }
+        }
+
+        const sparks = [];
+        for (let i = 0; i < 35; i++) {
+            sparks.push(new Spark());
+        }
+
+        // Generate Pixel Landscape & Sunset Sea Reflection
+        function drawLandscape() {
+            const palette = colorPalette[activeTheme];
+            
+            // 1. Draw Sky Gradient
+            let skyGrad = ctx.createLinearGradient(0, 0, 0, height * 0.6);
+            skyGrad.addColorStop(0, palette.skyTop);
+            skyGrad.addColorStop(0.5, palette.skyMiddle);
+            skyGrad.addColorStop(1, palette.skyBottom);
+            ctx.fillStyle = skyGrad;
+            ctx.fillRect(0, 0, width, height * 0.6);
+
+            // 2. Draw Sun
+            ctx.fillStyle = palette.seaReflection;
+            ctx.globalAlpha = 0.85;
+            const sunX = width * 0.35;
+            const sunY = height * 0.55;
+            const sunRadius = Math.min(width, height) * 0.09;
+            ctx.beginPath();
+            ctx.arc(sunX, sunY, sunRadius, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.globalAlpha = 1.0;
+
+            // 3. Sea Gradient
+            let seaGrad = ctx.createLinearGradient(0, height * 0.6, 0, height);
+            seaGrad.addColorStop(0, palette.sea);
+            seaGrad.addColorStop(1, palette.forestSilhouettes);
+            ctx.fillStyle = seaGrad;
+            ctx.fillRect(0, height * 0.6, width, height * 0.4);
+
+            // 4. Pixelated Sun Reflection Lines over water
+            ctx.fillStyle = palette.seaReflection;
+            let refHeight = height * 0.6;
+            let refWidth = sunRadius * 1.8;
+            for (let i = 0; i < 15; i++) {
+                let segmentY = refHeight + (i * (height * 0.4 / 15));
+                let segmentH = 4 + (i * 0.6);
+                let segmentW = refWidth * (1 - (i * 0.04));
+                ctx.globalAlpha = 0.8 - (i * 0.04);
+                ctx.fillRect(sunX - (segmentW / 2), segmentY, segmentW, segmentH);
+            }
+            ctx.globalAlpha = 1.0;
+
+            // 5. Silhouette Mountains & Trees (Background Parallax effect)
+            ctx.fillStyle = palette.forestSilhouettes;
+            
+            // Draw custom retro silhouette landscape blocks
+            ctx.beginPath();
+            ctx.moveTo(0, height * 0.62);
+            // Left Cliff blocky geometry
+            ctx.lineTo(width * 0.15, height * 0.60);
+            ctx.lineTo(width * 0.22, height * 0.63);
+            ctx.lineTo(width * 0.28, height * 0.58);
+            ctx.lineTo(width * 0.3, height * 0.61);
+            // Right Cliff blocky geometry
+            ctx.lineTo(width * 0.7, height * 0.61);
+            ctx.lineTo(width * 0.75, height * 0.55);
+            ctx.lineTo(width * 0.82, height * 0.63);
+            ctx.lineTo(width, height * 0.59);
+            ctx.lineTo(width, height);
+            ctx.lineTo(0, height);
+            ctx.closePath();
+            ctx.fill();
+
+            // Render block-style pixelated pine trees on the silhouette ridges
+            ctx.fillStyle = palette.forestSilhouettes;
+            function drawPixelTree(tx, ty, size) {
+                // draw standard blocky pine tree
+                ctx.fillRect(tx - 4, ty, 8, size); // trunk
+                ctx.fillRect(tx - 16, ty - 12, 32, 8); // bottom foliage
+                ctx.fillRect(tx - 12, ty - 22, 24, 8); // mid foliage
+                ctx.fillRect(tx - 8, ty - 30, 16, 8); // top foliage
+                ctx.fillRect(tx - 4, ty - 36, 8, 6); // tip
+            }
+
+            drawPixelTree(width * 0.08, height * 0.61, 35);
+            drawPixelTree(width * 0.16, height * 0.60, 45);
+            drawPixelTree(width * 0.26, height * 0.59, 25);
+            drawPixelTree(width * 0.76, height * 0.56, 40);
+            drawPixelTree(width * 0.88, height * 0.61, 50);
+        }
+
+        // Keep dynamic render loop moving for sparks
+        function animate() {
+            ctx.clearRect(0, 0, width, height);
+            drawLandscape();
+            
+            // Update and Draw sparks
+            sparks.forEach(spark => {
+                spark.update();
+                spark.draw();
+            });
+
+            requestAnimationFrame(animate);
+        }
+
+        window.onload = function() {
+            animate();
+        };
+
+
+        // Theme Changer toggle (Sunset vs Soulfire theme variants)
+        function toggleTheme() {
+            const logoText = document.getElementById('logoText');
+            const logoCrown = document.getElementById('logoCrown');
+            const themeDot = document.getElementById('themeDot');
+            const themeName = document.getElementById('themeName');
+            const glowBg = document.getElementById('glowBg');
+            const subTitleText = document.getElementById('subTitleText');
+
+            if (activeTheme === 'sunset') {
+                activeTheme = 'soulfire';
+                
+                // Set Theme Indicator to Active Soulfire Theme
+                themeDot.className = "w-2.5 h-2.5 rounded-full bg-cyan-400 animate-pulse";
+                themeName.innerText = "Soulfire Theme";
+                
+                // Change Logo classes & colors
+                logoText.classList.remove('from-yellow-300', 'via-orange-400', 'to-red-600', 'drop-shadow-[0_5px_0_rgba(15,5,0,1)]');
+                logoText.classList.add('from-cyan-300', 'via-purple-400', 'to-indigo-600', 'drop-shadow-[0_5px_0_rgba(10,5,30,1)]');
+                
+                logoCrown.classList.remove('text-orange-500');
+                logoCrown.classList.add('text-cyan-400');
+
+                subTitleText.classList.remove('text-orange-400');
+                subTitleText.classList.add('text-cyan-300');
+
+                glowBg.classList.remove('from-orange-600/10', 'to-red-600/5');
+                glowBg.classList.add('from-cyan-600/10', 'to-indigo-600/5');
+
+                showNotification("Switched to Soulfire Theme!");
+            } else {
+                activeTheme = 'sunset';
+
+                themeDot.className = "w-2.5 h-2.5 rounded-full bg-orange-500 animate-pulse";
+                themeName.innerText = "Sunset Theme";
+                
+                // Revert to Sunset Palette
+                logoText.classList.remove('from-cyan-300', 'via-purple-400', 'to-indigo-600', 'drop-shadow-[0_5px_0_rgba(10,5,30,1)]');
+                logoText.classList.add('from-yellow-300', 'via-orange-400', 'to-red-600', 'drop-shadow-[0_5px_0_rgba(15,5,0,1)]');
+                
+                logoCrown.classList.remove('text-cyan-400');
+                logoCrown.classList.add('text-orange-500');
+
+                subTitleText.classList.remove('text-cyan-300');
+                subTitleText.classList.add('text-orange-400');
+
+                glowBg.classList.remove('from-cyan-600/10', 'to-indigo-600/5');
+                glowBg.classList.add('from-orange-600/10', 'to-red-600/5');
+
+                showNotification("Switched to Sunset Theme!");
+            }
+        }
+
+
+        // Mock Discord interaction handler
+        function triggerDiscordMock(e) {
+            e.preventDefault();
+            playClickSound();
+            
+            const modal = document.getElementById('discordModal');
+            const card = document.getElementById('modalCard');
+            
+            // Randomize active online user count nicely for fresh feel
+            document.getElementById('onlineCount').innerText = (Math.floor(Math.random() * 500) + 14000).toLocaleString();
+
+            modal.classList.remove('opacity-0', 'pointer-events-none');
+            card.classList.remove('scale-95');
+            card.classList.add('scale-100');
+        }
+
+        function closeDiscordModal() {
+            const modal = document.getElementById('discordModal');
+            const card = document.getElementById('modalCard');
+            
+            modal.classList.add('opacity-0', 'pointer-events-none');
+            card.classList.add('scale-95');
+            card.classList.remove('scale-100');
+        }
+
+        function simulateJoinRedirect() {
+            closeDiscordModal();
+            showNotification("Connecting to Discord client successfully!");
+        }
+
+        // Toggle Details Drawer
+        let detailsOpen = false;
+        function toggleDetailsDrawer() {
+            const drawer = document.getElementById('detailsDrawer');
+            const icon = document.getElementById('drawerChevron');
+            
+            detailsOpen = !detailsOpen;
+            if (detailsOpen) {
+                drawer.style.maxHeight = "500px";
+                icon.style.transform = "rotate(180deg)";
+            } else {
+                drawer.style.maxHeight = "0";
+                icon.style.transform = "rotate(0deg)";
+            }
+        }
+    </script>
 </body>
 </html>
